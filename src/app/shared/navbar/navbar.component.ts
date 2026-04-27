@@ -79,7 +79,7 @@ export class NavbarComponent {
     }
     if (this.esTecnico()) {
     this.menuItems = [
-      { label: 'Inicio', path: '/tecnico/dashboard', exact: true },
+      { label: 'Dashboard', path: '/tecnico/dashboard', exact: true },
       { label: 'Incidentes', path: '/tecnico/incidentes' },
       { label: 'Historial', path: '/tecnico/historial' },
       { label: 'Perfil', path: '/perfil' }

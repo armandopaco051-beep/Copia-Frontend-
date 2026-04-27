@@ -27,8 +27,16 @@ export class AsignacionService {
   asignarTecnico(idAsignacion : number , codigoTecnico : string){
     return this.http.put<any>(
       `${this.apiUrl}/asignacion/${idAsignacion}/tecnico/${codigoTecnico}`,
-      {}
+      {codigo_tecnico: codigoTecnico,
+        observacion: 'Técnico asignado desde el panel del taller'
+      }
     )
+  }
+  iniciarRuta(idAsignacion:number){
+    return this.http.put(`${this.apiUrl}/asignacion/${idAsignacion}/iniciar-ruta`, {});
+  }
+  finalizarServicio(idAsignacion:number){
+    return this.http.put(`${this.apiUrl}/asignacion/${idAsignacion}/finalizar`, {});
   }
   
 }

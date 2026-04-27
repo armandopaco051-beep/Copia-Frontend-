@@ -54,7 +54,7 @@ export class LoginComponent {
                     return;
                 }
                 if (usuario.id_rol ===3){
-                    this.router.navigate(['/dashboard-tecnicos']);
+                    this.router.navigate(['/tecnico/dashboard']);
                     return;
                 }
 

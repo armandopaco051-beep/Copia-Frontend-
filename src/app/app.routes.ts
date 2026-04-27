@@ -74,5 +74,26 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/tecnicos/tecnicos.component').then(m => m.TecnicosComponent),
     canActivate: [rolGuard([1, 2])] // Admin plataforma y admin taller
   },
+  {
+  path: 'tecnico/dashboard',
+  loadComponent: () =>
+    import('./pages/dashboard-tecnicos/dashboard-tecnico.component')
+      .then(m => m.TecnicoDashboardComponent),
+  canActivate: [authGuard, rolGuard([3])]
+},
+{
+  path: 'tecnico/incidentes',
+  loadComponent: () =>
+    import('./pages/incidentes-tecnicos/tecnico_incidente.component')
+      .then(m => m.TecnicoIncidentesComponent),
+  canActivate: [authGuard, rolGuard([3])]
+},
+{
+  path: 'tecnico/historial',
+  loadComponent: () =>
+    import('./pages/historial-tecnico/tecnico-historial.component')
+      .then(m => m.TecnicoHistorialComponent),
+  canActivate: [authGuard, rolGuard([3])]
+},
   { path: '**', redirectTo: 'login' }
 ];

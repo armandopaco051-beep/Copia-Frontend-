@@ -1,0 +1,99 @@
+<app-navbar></app-navbar>
+
+<div class="tecnico-page">
+
+  <div *ngIf="loading" class="state-box">
+    Cargando incidente asignado...
+  </div>
+
+  <div *ngIf="error && !loading" class="state-box error">
+    {{ error }}
+  </div>
+
+  <ng-container *ngIf="!loading && !error">
+
+    <section class="hero-panel">
+      <div>
+        <span class="eyebrow">Servicio actual</span>
+        <h1>Incidente asignado</h1>
+        <p>Atiende el servicio asignado por tu taller.</p>
+      </div>
+
+      <button class="btn-secondary small-btn" (click)="cargarIncidenteActual()">
+        Actualizar
+      </button>
+    </section>
+
+    <section class="card-large" *ngIf="incidenteActual; else sinIncidente">
+      <div class="card-head">
+        <div>
+          <span class="eyebrow">#EV-{{ incidenteActual.id_incidente }}</span>
+          <h2>{{ incidenteActual.categoria }}</h2>
+        </div>
+
+        <span class="estado-chip">
+          {{ incidenteActual.estado }}
+        </span>
+      </div>
+
+      <p class="descripcion">
+        {{ incidenteActual.descripcion }}
+      </p>
+
+      <div class="info-grid">
+        <div>
+          <span>Cliente</span>
+          <strong>{{ incidenteActual.cliente }}</strong>
+        </div>
+
+        <div>
+          <span>Teléfono</span>
+          <strong>{{ incidenteActual.telefono }}</strong>
+        </div>
+
+        <div>
+          <span>Fecha</span>
+          <strong>{{ incidenteActual.fecha | date:'dd/MM/yyyy HH:mm' }}</strong>
+        </div>
+
+        <div>
+          <span>Ubicación</span>
+          <strong>{{ incidenteActual.latitud }}, {{ incidenteActual.longitud }}</strong>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn-secondary" (click)="verUbicacion()">
+          Ver ubicación del cliente
+        </button>
+
+        <button
+          class="btn-primary"
+          *ngIf="incidenteActual.id_estado_asignacion === 4 || incidenteActual.id_estado_asignacion === 5"
+          (click)="iniciarRuta()">
+          {{ incidenteActual?.id_estado_asignacion===5 ? 'Ver ruta nuevamente' : 'Iniciar Ruta'}}
+        </button>
+
+        <button
+          class="btn-success"
+          *ngIf="incidenteActual.id_estado_asignacion === 5"
+          (click)="finalizarServicio()">
+          Finalizar servicio
+        </button>
+      </div>
+    </section>
+
+    <ng-template #sinIncidente>
+      <section class="card-large empty-service">
+        <span class="eyebrow">Sin servicio activo</span>
+        <h2>No tienes incidentes asignados actualmente</h2>
+        <p>
+          Cuando el administrador del taller te asigne un incidente,
+          aparecerá en esta sección.
+        </p>
+      </section>
+    </ng-template>
+
+  </ng-container>
+
+</div>

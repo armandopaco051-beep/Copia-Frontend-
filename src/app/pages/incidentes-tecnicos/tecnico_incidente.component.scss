@@ -1,0 +1,196 @@
+.tecnico-page {
+  min-height: 100vh;
+  background: #07111f;
+  color: white;
+  padding: 96px 32px 36px;
+}
+
+/* Estados */
+.state-box {
+  background: #0b1b2e;
+  border: 1px dashed rgba(255, 255, 255, 0.14);
+  border-radius: 20px;
+  padding: 34px;
+  text-align: center;
+  color: #9fb8d3;
+}
+
+.state-box.error {
+  color: #ff6b6b;
+  border-color: rgba(255, 107, 107, 0.4);
+  background: rgba(255, 0, 0, 0.06);
+}
+
+/* Header */
+.hero-panel {
+  background: linear-gradient(135deg, #0b1b2e, #092238);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+  padding: 26px;
+  margin-bottom: 22px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+}
+
+.eyebrow {
+  color: #ff6b35;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.hero-panel h1 {
+  margin: 8px 0 6px;
+  font-size: 32px;
+}
+
+.hero-panel p {
+  margin: 0;
+  color: #9fb8d3;
+}
+
+/* Card principal */
+.card-large {
+  background: #0b1b2e;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+  padding: 24px;
+  max-width: 920px;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.18);
+}
+
+.card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.card-head h2 {
+  margin: 6px 0 0;
+  font-size: 25px;
+}
+
+.estado-chip {
+  background: rgba(45, 212, 191, 0.12);
+  color: #2dd4bf;
+  padding: 8px 13px;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.descripcion {
+  color: #c8d8ea;
+  line-height: 1.55;
+  margin: 14px 0 18px;
+}
+
+/* Datos */
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.info-grid div {
+  background: #081a2d;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 16px;
+  padding: 14px;
+}
+
+.info-grid span {
+  display: block;
+  color: #7f9bb8;
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+
+.info-grid strong {
+  color: white;
+  font-size: 14px;
+  word-break: break-word;
+}
+
+/* Botones */
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.actions button,
+.btn-secondary,
+.btn-primary,
+.btn-success {
+  border: none;
+  border-radius: 15px;
+  padding: 13px 16px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.actions button {
+  flex: 1 1 170px;
+}
+
+.actions button:hover,
+.btn-secondary:hover,
+.btn-primary:hover,
+.btn-success:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.08);
+}
+
+.btn-primary {
+  background: #ff6b35;
+  color: white;
+}
+
+.btn-secondary {
+  background: #132b47;
+  color: white;
+}
+
+.btn-success {
+  background: #059669;
+  color: white;
+}
+
+.small-btn {
+  max-width: 140px;
+}
+
+.empty-service {
+  max-width: 780px;
+}
+
+.empty-service p {
+  color: #9fb8d3;
+  line-height: 1.5;
+}
+
+@media (max-width: 700px) {
+  .tecnico-page {
+    padding: 86px 16px 24px;
+  }
+
+  .hero-panel {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .card-head {
+    flex-direction: column;
+  }
+}

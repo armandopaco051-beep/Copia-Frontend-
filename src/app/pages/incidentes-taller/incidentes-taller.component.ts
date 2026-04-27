@@ -89,7 +89,7 @@ export class IncidentesTallerComponent implements OnInit {
     this.asignacionService.listarPorTaller(this.idTaller).subscribe({
       next: (data: any[]) => {
         console.log('INCIDENTES DEL TALLER:', data);
-        this.incidentes = data || [];
+        this.incidentes = data;
         this.loading = false;
       },
       error: (err: any) => {
@@ -126,6 +126,7 @@ export class IncidentesTallerComponent implements OnInit {
       next: () => {
         item.id_estado_asignacion = 2; // ✅ CAMBIO: localmente queda aceptada
         this.abrirAsignarTecnico(item); // ✅ CAMBIO: abrir selección de técnico
+        this.cargarIncidentes(); 
       },
       error: (err: any) => {
         console.error(err);
@@ -176,30 +177,50 @@ export class IncidentesTallerComponent implements OnInit {
 
   // ✅ CAMBIO: confirmar técnico seleccionado
   confirmarAsignacionTecnico(): void {
-    if (!this.asignacionSeleccionada) {
-      alert('No se encontró la asignación');
-      return;
-    }
+      if (!this.asignacionSeleccionada) {
+            alert('No se encontró la asignación');
+            return;
+        }
 
-    if (!this.tecnicoSeleccionado) {
-      alert('Selecciona un técnico disponible');
-      return;
-    }
+        if (!this.tecnicoSeleccionado) {
+            alert('Selecciona un técnico disponible');
+            return;
+        }
 
-    const idAsignacion = this.asignacionSeleccionada.id;
+        // ✅ CAMBIO: aseguramos que el id sea número
+        const idAsignacion = Number(this.asignacionSeleccionada.id);
 
-    this.asignacionService.asignarTecnico(idAsignacion, this.tecnicoSeleccionado).subscribe({
-      next: () => {
-        alert('Técnico asignado correctamente');
-        this.cerrarAsignarTecnico();
-        this.cargarIncidentes();
-      },
-      error: (err: any) => {
-        console.error(err);
-        alert(err.error?.detail || 'Error al asignar técnico');
-      }
-    });
-  }
+        // ✅ CAMBIO: aseguramos que el código del técnico sea texto
+        const codigoTecnico = String(this.tecnicoSeleccionado).trim();
+
+        console.log('ASIGNACIÓN SELECCIONADA:', this.asignacionSeleccionada);
+        console.log('ID ASIGNACIÓN:', idAsignacion);
+        console.log('CÓDIGO TÉCNICO:', codigoTecnico);
+
+        // ✅ CAMBIO: validación extra para evitar enviar undefined o NaN
+        if (!idAsignacion || isNaN(idAsignacion)) {
+            alert('El ID de asignación no es válido');
+            return;
+        }
+
+        if (!codigoTecnico) {
+            alert('El código del técnico no es válido');
+            return;
+        }
+
+        this.asignacionService.asignarTecnico(idAsignacion, codigoTecnico).subscribe({
+            next: (resp: any) => {
+            console.log('RESPUESTA ASIGNAR TÉCNICO:', resp);
+            alert('Técnico asignado correctamente');
+            this.cerrarAsignarTecnico();
+            this.cargarIncidentes();
+            },
+            error: (err: any) => {
+            //console.error('ERROR ASIGNAR TÉCNICO:', err);
+            alert(err.error?.detail || 'Error al asignar técnico');
+            }
+        });
+        }
 
   // ✅ CAMBIO: abrir detalle
   verDetalle(item: any): void {

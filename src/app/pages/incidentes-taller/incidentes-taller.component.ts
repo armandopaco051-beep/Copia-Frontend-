@@ -5,6 +5,8 @@ import { FormsModule } from '@angular/forms';
 import { NavbarComponent } from '../../shared/navbar/navbar.component';
 import { AsignacionService } from '../../core/services/asignacion.service';
 import { TecnicoService } from '../../core/services/tecnico.service';
+import { EvidenciaService } from '../../core/services/evicencia.service';
+import { environment } from '../../../enviroments/enviroments';
 
 @Component({
   selector: 'app-incidentes-taller',
@@ -30,6 +32,10 @@ export class IncidentesTallerComponent implements OnInit {
   asignacionSeleccionada: any = null;
   tecnicosDisponibles: any[] = [];
   tecnicoSeleccionado = '';
+  evidencias :any[] =[]; 
+  loadingEvidencias = false ; 
+  errorEvidencia = ''; 
+
 
   categorias: Record<number, string> = {
     1: 'Batería descargada',
@@ -53,7 +59,8 @@ export class IncidentesTallerComponent implements OnInit {
 
   constructor(
     private asignacionService: AsignacionService,
-    private tecnicoService: TecnicoService
+    private tecnicoService: TecnicoService,
+    private evidenciaService : EvidenciaService
   ) {}
 
   ngOnInit(): void {
@@ -226,12 +233,41 @@ export class IncidentesTallerComponent implements OnInit {
   verDetalle(item: any): void {
     this.incidenteSeleccionado = item;
     this.mostrarDetalle = true;
+    this.evidencias =[]; 
+    this.errorEvidencia = ''; 
+    const idIncidente = Number(item.id_incidente); 
+    if (!idIncidente || isNaN(idIncidente)) {
+      alert('El ID del incidente no es válido');
+      return;
+    }
+    this.cargarEvidencias(idIncidente); 
   }
 
+  cargarEvidencias(idIncidente : number): void{
+    this.loadingEvidencias = true;
+    this.errorEvidencia = '';
+
+    this.evidenciaService.listarPorIncidente(idIncidente).subscribe({
+    next: (data: any[]) => {
+      console.log('EVIDENCIAS DEL INCIDENTE:', data);
+      this.evidencias = data || [];
+      this.loadingEvidencias = false;
+    },
+    error: (err: any) => {
+      console.error('ERROR CARGANDO EVIDENCIAS:', err);
+      this.errorEvidencia = err.error?.detail || 'No se pudieron cargar las evidencias.';
+      this.loadingEvidencias = false;
+    }
+  });
+  }
   // ✅ CAMBIO: cerrar detalle
   cerrarDetalle(): void {
     this.incidenteSeleccionado = null;
     this.mostrarDetalle = false;
+
+    this.evidencias = [];
+    this.errorEvidencia = '';
+    this.loadingEvidencias = false;
   }
 
   // ✅ CAMBIO: ubicación solo desde el detalle
@@ -337,4 +373,34 @@ export class IncidentesTallerComponent implements OnInit {
     const usuario = item.incidente?.usuario || item.usuario || item.cliente || {};
     return usuario.email || 'No enviado por backend';
   }
+  getUrlArchivo(evidencia: any): string {
+  if (!evidencia?.url_archivo) return '';
+
+  let ruta = String(evidencia.url_archivo).replaceAll('\\', '/');
+
+  // ✅ Si ya viene con http, la dejamos igual
+  if (ruta.startsWith('http')) {
+    return ruta;
+  }
+
+  // ✅ Quita slash inicial si viene con /uploads
+  if (ruta.startsWith('/')) {
+    ruta = ruta.substring(1);
+  }
+
+  return `${environment.apiUrl}/${ruta}`;
+  }
+
+  esImagen(evidencia: any): boolean {
+  return Number(evidencia.id_tipo_evidencia) === 1;
+  }
+
+  esAudio(evidencia: any): boolean {
+    return Number(evidencia.id_tipo_evidencia) === 2;
+  }
+
+  esTexto(evidencia: any): boolean {
+    return Number(evidencia.id_tipo_evidencia) === 3;
+  }
+
 }

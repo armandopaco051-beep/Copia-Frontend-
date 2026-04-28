@@ -61,16 +61,23 @@
             <span>Fecha</span>
             <strong>{{ getFecha(item) | date:'dd/MM/yyyy HH:mm' }}</strong>
           </div>
+
+          <div>
+            <span>Latitud</span>
+            <strong>{{ getLatitud(item) }}</strong>
+          </div>
+
+          <div>
+            <span>Longitud</span>
+            <strong>{{ getLongitud(item) }}</strong>
+          </div>
         </div>
 
-        <!-- ✅ CAMBIO: acciones según estado -->
         <div class="actions">
-
           <button class="btn-secondary" (click)="verDetalle(item)">
             Ver detalle
           </button>
 
-          <!-- ✅ CAMBIO: solo pendiente -->
           <button
             class="btn-primary"
             *ngIf="item.id_estado_asignacion === 1"
@@ -78,7 +85,6 @@
             Aceptar
           </button>
 
-          <!-- ✅ CAMBIO: solo pendiente -->
           <button
             class="btn-danger"
             *ngIf="item.id_estado_asignacion === 1"
@@ -86,7 +92,6 @@
             Rechazar
           </button>
 
-          <!-- ✅ CAMBIO: solo aceptada -->
           <button
             class="btn-secondary"
             *ngIf="item.id_estado_asignacion === 2"
@@ -94,20 +99,11 @@
             Asignar técnico
           </button>
 
-          <!-- ✅ CAMBIO: informativo si ya tiene técnico -->
           <span
-            class="mini-status"
-            *ngIf="item.id_estado_asignacion === 4">
-            Técnico asignado
+            class="finalizado-label"
+            *ngIf="item.id_estado_asignacion === 6">
+            Servicio finalizado
           </span>
-
-          <!-- ✅ CAMBIO: informativo en camino -->
-          <span
-            class="mini-status"
-            *ngIf="item.id_estado_asignacion === 5">
-            Técnico en camino
-          </span>
-
         </div>
 
       </div>
@@ -115,146 +111,213 @@
     </div>
 
   </ng-container>
+</div>
 
-  <!-- ✅ CAMBIO: modal detalle -->
-  <div class="modal-backdrop" *ngIf="mostrarDetalle && incidenteSeleccionado">
-    <div class="modal-card">
 
-      <div class="modal-head">
+<!-- MODAL DETALLE DEL INCIDENTE -->
+<div class="modal-backdrop" *ngIf="mostrarDetalle && incidenteSeleccionado">
+  <div class="modal-card modal-detalle">
+
+    <div class="modal-head">
+      <div>
+        <span class="eyebrow">Detalle del incidente</span>
+        <h2>#EV-{{ incidenteSeleccionado.id_incidente }}</h2>
+      </div>
+
+      <button type="button" (click)="cerrarDetalle()">×</button>
+    </div>
+
+    <div class="detalle-grid">
+      <div>
+        <span>Categoría</span>
+        <strong>{{ getCategoria(incidenteSeleccionado) }}</strong>
+      </div>
+
+      <div>
+        <span>Prioridad</span>
+        <strong [ngClass]="getClasePrioridad(incidenteSeleccionado)">
+          {{ getPrioridad(incidenteSeleccionado) }}
+        </strong>
+      </div>
+
+      <div>
+        <span>Estado</span>
+        <strong>{{ getEstadoAsignacion(incidenteSeleccionado) }}</strong>
+      </div>
+
+      <div>
+        <span>Fecha</span>
+        <strong>{{ getFecha(incidenteSeleccionado) | date:'dd/MM/yyyy HH:mm' }}</strong>
+      </div>
+    </div>
+
+    <div class="detalle-section">
+      <h3>Descripción del problema</h3>
+      <p>{{ getDescripcion(incidenteSeleccionado) }}</p>
+    </div>
+
+    <div class="detalle-section">
+      <h3>Datos del solicitante</h3>
+
+      <div class="detalle-grid">
         <div>
-          <span class="modal-label">Detalle de emergencia</span>
-          <h2>Incidente #EV-{{ incidenteSeleccionado.id_incidente }}</h2>
+          <span>Nombre</span>
+          <strong>{{ getNombreSolicitante(incidenteSeleccionado) }}</strong>
         </div>
 
-        <button type="button" class="modal-close" (click)="cerrarDetalle()">
-          ✕
-        </button>
-      </div>
+        <div>
+          <span>Teléfono</span>
+          <strong>{{ getTelefonoSolicitante(incidenteSeleccionado) }}</strong>
+        </div>
 
-      <div class="detail-section">
-        <h3>Datos del cliente</h3>
-
-        <div class="detail-grid">
-          <div>
-            <span>Cliente</span>
-            <strong>{{ getNombreSolicitante(incidenteSeleccionado) }}</strong>
-          </div>
-
-          <div>
-            <span>Teléfono</span>
-            <strong>{{ getTelefonoSolicitante(incidenteSeleccionado) }}</strong>
-          </div>
-
-          <div>
-            <span>Correo</span>
-            <strong>{{ getCorreoSolicitante(incidenteSeleccionado) }}</strong>
-          </div>
+        <div>
+          <span>Correo</span>
+          <strong>{{ getCorreoSolicitante(incidenteSeleccionado) }}</strong>
         </div>
       </div>
+    </div>
 
-      <div class="detail-section">
-        <h3>Datos del incidente</h3>
+    <div class="detalle-section">
+      <h3>Ubicación del cliente</h3>
 
-        <div class="detail-grid">
-          <div>
-            <span>Categoría</span>
-            <strong>{{ getCategoria(incidenteSeleccionado) }}</strong>
-          </div>
-
-          <div>
-            <span>Prioridad</span>
-            <strong>{{ getPrioridad(incidenteSeleccionado) }}</strong>
-          </div>
-
-          <div>
-            <span>Estado</span>
-            <strong>{{ getEstadoAsignacion(incidenteSeleccionado) }}</strong>
-          </div>
-
-          <div>
-            <span>Fecha</span>
-            <strong>{{ getFecha(incidenteSeleccionado) | date:'dd/MM/yyyy HH:mm' }}</strong>
-          </div>
-
-          <div>
-            <span>Latitud</span>
-            <strong>{{ getLatitud(incidenteSeleccionado) }}</strong>
-          </div>
-
-          <div>
-            <span>Longitud</span>
-            <strong>{{ getLongitud(incidenteSeleccionado) }}</strong>
-          </div>
+      <div class="detalle-grid">
+        <div>
+          <span>Latitud</span>
+          <strong>{{ getLatitud(incidenteSeleccionado) }}</strong>
         </div>
-      </div>
 
-      <div class="detail-description">
-        <span>Descripción del problema</span>
-        <p>{{ getDescripcion(incidenteSeleccionado) }}</p>
+        <div>
+          <span>Longitud</span>
+          <strong>{{ getLongitud(incidenteSeleccionado) }}</strong>
+        </div>
       </div>
 
       <div class="modal-actions">
         <button class="btn-secondary" (click)="verUbicacion(incidenteSeleccionado)">
           Ver ubicación
         </button>
+      </div>
+    </div>
 
-        <button class="btn-primary" (click)="cerrarDetalle()">
-          Cerrar detalle
-        </button>
+    <!-- EVIDENCIAS DEL CLIENTE -->
+    <div class="detalle-section">
+      <h3>Evidencias del cliente</h3>
+
+      <div *ngIf="loadingEvidencias" class="evidencia-state">
+        Cargando evidencias...
       </div>
 
-    </div>
-  </div>
+      <div *ngIf="errorEvidencia && !loadingEvidencias" class="evidencia-state error">
+        {{ errorEvidencia }}
+      </div>
 
-  <!-- ✅ CAMBIO: modal asignar técnico -->
-  <div class="modal-backdrop" *ngIf="mostrarAsignarTecnico && asignacionSeleccionada">
-    <div class="modal-card">
+      <div
+        *ngIf="!loadingEvidencias && !errorEvidencia && evidencias.length === 0"
+        class="evidencia-state">
+        No hay evidencias registradas para este incidente.
+      </div>
 
-      <div class="modal-head">
-        <div>
-          <span class="modal-label">Asignación operativa</span>
-          <h2>Asignar técnico</h2>
+      <div class="evidencias-grid" *ngIf="evidencias.length > 0">
+
+        <div class="evidencia-card" *ngFor="let ev of evidencias">
+
+          <!-- Imagen -->
+          <ng-container *ngIf="esImagen(ev)">
+            <span class="evidencia-label">Imagen enviada</span>
+
+            <img
+              class="evidencia-img"
+              [src]="getUrlArchivo(ev)"
+              alt="Evidencia del incidente">
+
+            <p *ngIf="ev.transcripcion">
+              <strong>Análisis / descripción:</strong>
+              {{ ev.transcripcion }}
+            </p>
+          </ng-container>
+
+          <!-- Audio -->
+          <ng-container *ngIf="esAudio(ev)">
+            <span class="evidencia-label">Audio enviado</span>
+
+            <audio
+              class="evidencia-audio"
+              controls
+              [src]="getUrlArchivo(ev)">
+            </audio>
+
+            <p *ngIf="ev.transcripcion">
+              <strong>Transcripción:</strong>
+              {{ ev.transcripcion }}
+            </p>
+          </ng-container>
+
+          <!-- Texto -->
+          <ng-container *ngIf="esTexto(ev)">
+            <span class="evidencia-label">Texto enviado</span>
+
+            <p>
+              <strong>Descripción:</strong>
+              {{ ev.transcripcion }}
+            </p>
+          </ng-container>
+
         </div>
 
-        <button type="button" class="modal-close" (click)="cerrarAsignarTecnico()">
-          ✕
-        </button>
       </div>
-
-      <p class="modal-subtitle">
-        Selecciona un técnico disponible para atender el incidente
-        #EV-{{ asignacionSeleccionada.id_incidente }}.
-      </p>
-
-      <div class="form-group">
-        <label>Técnico disponible</label>
-
-        <select [(ngModel)]="tecnicoSeleccionado">
-          <option value="">Seleccione un técnico</option>
-
-          <option
-            *ngFor="let tecnico of tecnicosDisponibles"
-            [value]="tecnico.codigo">
-            {{ tecnico.nombre }} - {{ tecnico.codigo }}
-          </option>
-        </select>
-      </div>
-
-      <div *ngIf="tecnicosDisponibles.length === 0" class="mini-warning">
-        No hay técnicos disponibles en este momento.
-      </div>
-
-      <div class="modal-actions">
-        <button class="btn-secondary" (click)="cerrarAsignarTecnico()">
-          Cancelar
-        </button>
-
-        <button class="btn-primary" (click)="confirmarAsignacionTecnico()">
-          Confirmar asignación
-        </button>
-      </div>
-
     </div>
-  </div>
 
+    <div class="modal-actions">
+      <button class="btn-secondary" (click)="cerrarDetalle()">
+        Cerrar detalle
+      </button>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- MODAL ASIGNAR TÉCNICO -->
+<div class="modal-backdrop" *ngIf="mostrarAsignarTecnico && asignacionSeleccionada">
+  <div class="modal-card">
+
+    <div class="modal-head">
+      <div>
+        <span class="eyebrow">Asignación técnica</span>
+        <h2>Asignar técnico</h2>
+      </div>
+
+      <button type="button" (click)="cerrarAsignarTecnico()">×</button>
+    </div>
+
+    <p>
+      Selecciona un técnico disponible para atender el incidente
+      <strong>#EV-{{ asignacionSeleccionada.id_incidente }}</strong>.
+    </p>
+
+    <div class="form-group">
+      <label>Técnico disponible</label>
+
+      <select [(ngModel)]="tecnicoSeleccionado">
+        <option value="">Seleccione un técnico</option>
+
+        <option
+          *ngFor="let tecnico of tecnicosDisponibles"
+          [value]="tecnico.codigo">
+          {{ tecnico.nombre }} - {{ tecnico.codigo }}
+        </option>
+      </select>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-secondary" (click)="cerrarAsignarTecnico()">
+        Cancelar
+      </button>
+
+      <button class="btn-primary" (click)="confirmarAsignacionTecnico()">
+        Confirmar asignación
+      </button>
+    </div>
+
+  </div>
 </div>

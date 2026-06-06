@@ -1,6 +1,7 @@
 import { Component, OnInit, AfterViewInit, OnDestroy } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 
 import { NavbarComponent } from '../../shared/navbar/navbar.component';
 import {
@@ -12,13 +13,15 @@ import {
 import { DashboardService } from '../../core/services/dashboard.service';
 import { SolicitudService } from '../../core/services/solicitud.service';
 import { AuthService } from '../../core/services/auth.service';
+import { SuscripcionService } from '../../core/services/suscripcion.service';
+import { TenantSuscripcion } from '../../models/suscripcion.model';
 
 declare const Chart: any;
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, NavbarComponent, DatePipe, FormsModule],
+  imports: [CommonModule, NavbarComponent, DatePipe, FormsModule, RouterLink],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.scss']
 })
@@ -29,6 +32,9 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   solicitudes: any[] = [];
   pendientesSol = 0;
   loading = true;
+  suscripcionesLoading = true;
+  suscripcionesError = '';
+  tenants: TenantSuscripcion[] = [];
 
   actividadReciente: DashboardActividad[] = [];
   tendenciaSemanal: DashboardTendencia[] = [];
@@ -69,13 +75,15 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     private dashSvc: DashboardService,
     private solSvc: SolicitudService,
     private auth: AuthService,
+    private suscripcionService: SuscripcionService
   ) {}
 
   ngOnInit(): void {
     this.usuario = this.auth.getUsuarioStorage();
     this.cargarDashboard();
     this.cargarSolicitudes();
-    this.cargarPendientesSolicitudes(); 
+    this.cargarPendientesSolicitudes();
+    this.cargarSuscripciones();
   }
 
   ngAfterViewInit(): void {
@@ -134,6 +142,48 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         console.error(err)
       }
     })
+  }
+
+  cargarSuscripciones(): void {
+    this.suscripcionesLoading = true;
+    this.suscripcionesError = '';
+
+    this.suscripcionService.listarTenants().subscribe({
+      next: tenants => {
+        this.tenants = tenants || [];
+        this.suscripcionesLoading = false;
+      },
+      error: err => {
+        console.error('Error suscripciones dashboard:', err);
+        this.suscripcionesError = err.error?.detail || 'No se pudo cargar el resumen de suscripciones.';
+        this.suscripcionesLoading = false;
+      }
+    });
+  }
+
+  get totalSuscripcionesActivas(): number {
+    return this.tenants.filter(item => item.estado_suscripcion === 'ACTIVA').length;
+  }
+
+  get totalSuscripcionesSuspendidas(): number {
+    return this.tenants.filter(item => item.estado_suscripcion === 'SUSPENDIDA').length;
+  }
+
+  get totalSuscripcionesVencidas(): number {
+    return this.tenants.filter(item =>
+      item.estado_suscripcion === 'VENCIDA' || item.estado_suscripcion === 'CANCELADA'
+    ).length;
+  }
+
+  diasSuscripcion(fecha: string): number {
+    if (!fecha) return 0;
+    return Math.max(Math.ceil((new Date(`${fecha}T23:59:59`).getTime() - Date.now()) / 86400000), 0);
+  }
+
+  claseSuscripcion(estado: string): string {
+    if (estado === 'ACTIVA') return 'subscription-active';
+    if (estado === 'SUSPENDIDA') return 'subscription-suspended';
+    return 'subscription-expired';
   }
   aceptarsolicitud(s: any): void {
     this.solSel =s; 

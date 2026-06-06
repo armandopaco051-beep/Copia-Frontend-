@@ -1,11 +1,14 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 
 import { NavbarComponent } from '../../shared/navbar/navbar.component';
 import { AsignacionService } from '../../core/services/asignacion.service';
 import { TecnicoService } from '../../core/services/tecnico.service';
 import { EvidenciaService } from '../../core/services/evicencia.service';
+import { ChatMensaje, ChatService } from '../../core/services/chat.service';
+import { ComprobantePago, PagoService, ResumenCobro } from '../../core/services/pago.service';
 import { environment } from '../../../enviroments/enviroments';
 
 @Component({
@@ -35,6 +38,14 @@ export class IncidentesTallerComponent implements OnInit {
   evidencias :any[] =[]; 
   loadingEvidencias = false ; 
   errorEvidencia = ''; 
+  chatMensajes: ChatMensaje[] = [];
+  loadingChat = false;
+  errorChat = '';
+  resumenCobro: ResumenCobro | null = null;
+  comprobantePago: ComprobantePago | null = null;
+  loadingPagos = false;
+  errorPagos = '';
+  private incidentePendienteDetalle = 0;
 
 
   categorias: Record<number, string> = {
@@ -60,7 +71,10 @@ export class IncidentesTallerComponent implements OnInit {
   constructor(
     private asignacionService: AsignacionService,
     private tecnicoService: TecnicoService,
-    private evidenciaService : EvidenciaService
+    private evidenciaService : EvidenciaService,
+    private chatService: ChatService,
+    private pagoService: PagoService,
+    private route: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
@@ -82,6 +96,11 @@ export class IncidentesTallerComponent implements OnInit {
       return;
     }
 
+    this.route.queryParamMap.subscribe(params => {
+      this.incidentePendienteDetalle = Number(params.get('incidente') || 0);
+      this.abrirDetallePendiente();
+    });
+
     this.cargarIncidentes();
     this.cargarTecnicosDisponibles();
   }
@@ -98,10 +117,13 @@ export class IncidentesTallerComponent implements OnInit {
         console.log('INCIDENTES DEL TALLER:', data);
         this.incidentes = data;
         this.loading = false;
+        this.abrirDetallePendiente();
       },
       error: (err: any) => {
         console.error('ERROR INCIDENTES:', err);
-        this.error = err.error?.detail || 'No se pudieron cargar los incidentes.';
+        this.error = err.status === 403
+          ? 'No tienes permiso para acceder a la información de este taller.'
+          : err.error?.detail || 'No se pudieron cargar los incidentes.';
         this.loading = false;
       }
     });
@@ -116,6 +138,9 @@ export class IncidentesTallerComponent implements OnInit {
       },
       error: (err: any) => {
         console.error('ERROR TÉCNICOS:', err);
+        if (err.status === 403) {
+          this.error = 'No tienes permiso para acceder a la información de este taller.';
+        }
       }
     });
   }
@@ -241,6 +266,89 @@ export class IncidentesTallerComponent implements OnInit {
       return;
     }
     this.cargarEvidencias(idIncidente); 
+    this.cargarChatIncidente(idIncidente);
+    this.cargarPagosIncidente(idIncidente);
+  }
+
+  private abrirDetallePendiente(): void {
+    if (!this.incidentePendienteDetalle || this.mostrarDetalle || this.incidentes.length === 0) return;
+
+    const incidente = this.incidentes.find(item => {
+      const id = Number(item.id_incidente || item.incidente?.codigo || item.incidente?.id || 0);
+      return id === this.incidentePendienteDetalle;
+    });
+
+    if (!incidente) return;
+
+    this.incidentePendienteDetalle = 0;
+    this.verDetalle(incidente);
+  }
+
+  cargarChatIncidente(idIncidente: number): void {
+    const token = localStorage.getItem('token') || '';
+
+    if (!token) {
+      this.errorChat = 'No se encontro token para cargar el chat.';
+      return;
+    }
+
+    this.loadingChat = true;
+    this.errorChat = '';
+    this.chatMensajes = [];
+
+    this.chatService.obtenerMensajes(idIncidente, token).subscribe({
+      next: (mensajes) => {
+        this.chatMensajes = mensajes || [];
+        this.loadingChat = false;
+      },
+      error: (err) => {
+        console.error('ERROR CHAT INCIDENTE:', err);
+        this.errorChat = err.status === 403
+          ? 'No tienes permiso para acceder a la información de este taller.'
+          : err.error?.detail || 'No se pudo cargar el historial del chat.';
+        this.loadingChat = false;
+      }
+    });
+  }
+
+  cargarPagosIncidente(idIncidente: number): void {
+    const token = localStorage.getItem('token') || '';
+
+    if (!token) {
+      this.errorPagos = 'No se encontro token para cargar pagos.';
+      return;
+    }
+
+    this.loadingPagos = true;
+    this.errorPagos = '';
+    this.resumenCobro = null;
+    this.comprobantePago = null;
+
+    this.pagoService.obtenerResumen(idIncidente, token).subscribe({
+      next: (resumen) => {
+        this.resumenCobro = resumen;
+        this.loadingPagos = false;
+        this.cargarComprobanteIncidente(idIncidente, token);
+      },
+      error: (err) => {
+        console.error('ERROR RESUMEN PAGO:', err);
+        this.errorPagos = err.status === 403
+          ? 'No tienes permiso para acceder a la información de este taller.'
+          : err.error?.detail || 'No se pudo cargar el resumen del cobro.';
+        this.loadingPagos = false;
+      }
+    });
+  }
+
+  cargarComprobanteIncidente(idIncidente: number, token: string): void {
+    this.pagoService.obtenerComprobante(idIncidente, token).subscribe({
+      next: (comprobante) => {
+        this.comprobantePago = comprobante;
+      },
+      error: () => {
+        this.comprobantePago = null;
+      }
+    });
   }
 
   cargarEvidencias(idIncidente : number): void{
@@ -268,6 +376,13 @@ export class IncidentesTallerComponent implements OnInit {
     this.evidencias = [];
     this.errorEvidencia = '';
     this.loadingEvidencias = false;
+    this.chatMensajes = [];
+    this.errorChat = '';
+    this.loadingChat = false;
+    this.resumenCobro = null;
+    this.comprobantePago = null;
+    this.errorPagos = '';
+    this.loadingPagos = false;
   }
 
   // ✅ CAMBIO: ubicación solo desde el detalle

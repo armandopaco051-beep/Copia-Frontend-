@@ -30,10 +30,17 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/usuarios/usuario.component').then(m => m.UsuariosComponent),
     canActivate: [rolGuard([1, 2])] // Admin plataforma y admin taller
   },
-    {
+  {
     path: 'roles',
     loadComponent: () => import('./pages/roles/roles.component').then(m => m.RolesComponent),
     canActivate: [rolGuard([1])] // Solo admin plataforma
+  },
+  {
+    path: 'suscripciones',
+    loadComponent: () =>
+      import('./pages/suscripciones-admin/suscripciones-admin.component')
+        .then(m => m.SuscripcionesAdminComponent),
+    canActivate: [authGuard, rolGuard([1])]
   },
   {
     path: 'incidentes-taller',
@@ -41,10 +48,15 @@ export const routes: Routes = [
     canActivate: [authGuard, rolGuard([2])] // Solo admin taller
   },
    {
-    path: 'admin-taller/dashboard/:idTaller',
+    path: 'admin-taller/dashboard',
     canActivate: [authGuard, rolGuard([2])],
     loadComponent: () =>
       import('./pages/dashboard-taller/dashboard-taller.component').then(m => m.DashboardTallerComponent)
+  },
+  {
+    path: 'admin-taller/dashboard/:idTaller',
+    redirectTo: 'admin-taller/dashboard',
+    pathMatch: 'full'
   },
   {
     path : 'admin-taller/tecnicos',
@@ -52,6 +64,29 @@ export const routes: Routes = [
     
     canActivate: [authGuard, rolGuard([2])] // Solo admin taller
   
+  },
+  {
+    path: 'admin-taller/cobertura',
+    loadComponent: () => import('./pages/cobertura-taller/cobertura-taller.component').then(m => m.CoberturaTallerComponent),
+    canActivate: [authGuard, rolGuard([2])] // Solo admin taller
+  },
+  {
+    path: 'admin-taller/evaluaciones',
+    loadComponent: () => import('./pages/evaluaciones-taller/evaluaciones-taller.component').then(m => m.EvaluacionesTallerComponent),
+    canActivate: [authGuard, rolGuard([2])] // Solo admin taller
+  },
+  {
+    path: 'admin-taller/cotizaciones',
+    loadComponent: () =>
+      import('./pages/cotizaciones-taller/cotizaciones-taller.component')
+        .then(m => m.CotizacionesTallerComponent),
+    canActivate: [authGuard, rolGuard([2])]
+  },
+  {
+    path: 'admin-taller/mi-plan',
+    loadComponent: () =>
+      import('./pages/mi-plan/mi-plan.component').then(m => m.MiPlanComponent),
+    canActivate: [authGuard, rolGuard([2])]
   },
   
   {
@@ -89,10 +124,24 @@ export const routes: Routes = [
   canActivate: [authGuard, rolGuard([3])]
 },
 {
+  path: 'tecnico/chat',
+  loadComponent: () =>
+    import('./pages/chat-tecnico/chat-tecnico.component')
+      .then(m => m.ChatTecnicoComponent),
+  canActivate: [authGuard, rolGuard([3])]
+},
+{
   path: 'tecnico/historial',
   loadComponent: () =>
     import('./pages/historial-tecnico/tecnico-historial.component')
       .then(m => m.TecnicoHistorialComponent),
+  canActivate: [authGuard, rolGuard([3])]
+},
+{
+  path: 'tecnico/evaluaciones',
+  loadComponent: () =>
+    import('./pages/evaluaciones-tecnico/evaluaciones-tecnico.component')
+      .then(m => m.EvaluacionesTecnicoComponent),
   canActivate: [authGuard, rolGuard([3])]
 },
   { path: '**', redirectTo: 'login' }

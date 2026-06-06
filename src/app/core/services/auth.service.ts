@@ -100,6 +100,7 @@ export class AuthService {
   logout(): void {
     localStorage.removeItem('token');
     localStorage.removeItem('usuario');
+    localStorage.removeItem('id_taller');
     this.usuarioSubject.next(null);
   }
 

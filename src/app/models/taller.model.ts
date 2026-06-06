@@ -35,3 +35,27 @@ export interface Tecnico {
   telefono: string;
   id_taller: number;
 }
+
+export interface CoberturaTaller {
+  codigo_taller?: number;
+  radio_km: number;
+  activo: boolean;
+  latitud?: number;
+  longitud?: number;
+  nombre_taller?: string;
+}
+
+export interface CoberturaUpdate {
+  codigo_taller: number;
+  nombre_taller: string;
+  latitud: number;
+  longitud: number;
+  radio_cobertura_km: number;
+}
+
+export interface CoberturaVerificacion {
+  dentro_cobertura: boolean;
+  distancia_km?: number;
+  radio_km?: number;
+  mensaje?: string;
+}

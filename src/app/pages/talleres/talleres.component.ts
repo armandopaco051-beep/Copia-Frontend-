@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NavbarComponent } from '../../shared/navbar/navbar.component';
 import { TallerService } from '../../core/services/taller.service';
-import { Taller, TallerCreate } from '../../models/taller.model';
+import { CoberturaVerificacion, Taller, TallerCreate } from '../../models/taller.model';
 import * as L from 'leaflet';
 
 @Component({
@@ -17,15 +17,31 @@ export class TalleresComponent implements OnInit, OnDestroy {
   talleres: Taller[] = [];
   mostrarModal = false;
   mostrarMapa = false;
+  mostrarCobertura = false;
   editando: Taller | null = null;
+  tallerCobertura: Taller | null = null;
   loading = false;
   loadingDireccion = false;
+  loadingCobertura = false;
+  guardandoCobertura = false;
+  verificandoCobertura = false;
   error = '';
+  errorCobertura = '';
+  resultadoCobertura: CoberturaVerificacion | null = null;
 
   form: TallerCreate = this.getFormInicial();
+  formCobertura = this.getCoberturaInicial();
+  puntoVerificacion = {
+    latitud: 0,
+    longitud: 0
+  };
 
   private mapa: L.Map | null = null;
   private marcador: L.Marker | null = null;
+  private mapaCobertura: L.Map | null = null;
+  private marcadorTallerCobertura: L.Marker | null = null;
+  private circuloCobertura: L.Circle | null = null;
+  private marcadorVerificacion: L.Marker | null = null;
 
   constructor(private tallerService: TallerService) {}
 
@@ -36,6 +52,7 @@ export class TalleresComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.destruirMapa();
+    this.destruirMapaCobertura();
   }
 
   getFormInicial(): TallerCreate {
@@ -47,6 +64,13 @@ export class TalleresComponent implements OnInit, OnDestroy {
       longitud: 0,
       horario_inicio: '08:00',
       horario_fin: '18:00'
+    };
+  }
+
+  getCoberturaInicial(): { radio_km: number; activo: boolean } {
+    return {
+      radio_km: 5,
+      activo: true
     };
   }
 
@@ -85,6 +109,46 @@ export class TalleresComponent implements OnInit, OnDestroy {
     this.error = '';
     this.form = this.getFormInicial();
     this.editando = null;
+  }
+
+  abrirCobertura(taller: Taller): void {
+    this.tallerCobertura = taller;
+    this.formCobertura = this.getCoberturaInicial();
+    this.puntoVerificacion = {
+      latitud: Number(taller.latitud || 0),
+      longitud: Number(taller.longitud || 0)
+    };
+    this.resultadoCobertura = null;
+    this.errorCobertura = '';
+    this.loadingCobertura = true;
+    this.mostrarCobertura = true;
+
+    this.tallerService.obtenerCobertura(taller.codigo).subscribe({
+      next: (cobertura) => {
+        this.formCobertura = {
+          radio_km: cobertura.radio_km > 0 ? cobertura.radio_km : 5,
+          activo: cobertura.activo
+        };
+        this.loadingCobertura = false;
+        setTimeout(() => this.inicializarMapaCobertura(), 250);
+      },
+      error: (err) => {
+        console.error('Error al cargar cobertura:', err);
+        this.errorCobertura = err.error?.detail || 'No se pudo cargar la cobertura. Puedes guardar una nueva configuración.';
+        this.loadingCobertura = false;
+        setTimeout(() => this.inicializarMapaCobertura(), 250);
+      }
+    });
+  }
+
+  cerrarCobertura(): void {
+    this.mostrarCobertura = false;
+    this.tallerCobertura = null;
+    this.errorCobertura = '';
+    this.resultadoCobertura = null;
+    this.formCobertura = this.getCoberturaInicial();
+    this.puntoVerificacion = { latitud: 0, longitud: 0 };
+    this.destruirMapaCobertura();
   }
 
   abrirMapa(): void {
@@ -127,6 +191,47 @@ export class TalleresComponent implements OnInit, OnDestroy {
     }, 200);
   }
 
+  private inicializarMapaCobertura(): void {
+    const contenedor = document.getElementById('mapa-cobertura');
+    if (!contenedor || !this.tallerCobertura) return;
+
+    this.destruirMapaCobertura();
+
+    const lat = Number(this.tallerCobertura.latitud || 0);
+    const lng = Number(this.tallerCobertura.longitud || 0);
+    const centro: L.LatLngExpression = [
+      lat || -17.7833,
+      lng || -63.1821
+    ];
+
+    this.mapaCobertura = L.map('mapa-cobertura').setView(centro, 12);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(this.mapaCobertura);
+
+    this.marcadorTallerCobertura = L.marker(centro)
+      .addTo(this.mapaCobertura)
+      .bindPopup(this.tallerCobertura.nombre);
+
+    this.actualizarCirculoCobertura();
+
+    if (this.puntoVerificacion.latitud && this.puntoVerificacion.longitud) {
+      this.colocarMarcadorVerificacion(this.puntoVerificacion.latitud, this.puntoVerificacion.longitud);
+    }
+
+    this.mapaCobertura.on('click', (e: L.LeafletMouseEvent) => {
+      this.puntoVerificacion = {
+        latitud: Number(e.latlng.lat.toFixed(7)),
+        longitud: Number(e.latlng.lng.toFixed(7))
+      };
+      this.resultadoCobertura = null;
+      this.colocarMarcadorVerificacion(this.puntoVerificacion.latitud, this.puntoVerificacion.longitud);
+    });
+
+    setTimeout(() => this.mapaCobertura?.invalidateSize(), 200);
+  }
+
   private colocarMarcador(lat: number, lng: number): void {
     if (!this.mapa) return;
 
@@ -143,6 +248,54 @@ export class TalleresComponent implements OnInit, OnDestroy {
 
     this.form.latitud = parseFloat(lat.toFixed(7));
     this.form.longitud = parseFloat(lng.toFixed(7));
+  }
+
+  private colocarMarcadorVerificacion(lat: number, lng: number): void {
+    if (!this.mapaCobertura) return;
+
+    const posicion: L.LatLngExpression = [lat, lng];
+    if (this.marcadorVerificacion) {
+      this.marcadorVerificacion.setLatLng(posicion);
+    } else {
+      this.marcadorVerificacion = L.marker(posicion, { draggable: true }).addTo(this.mapaCobertura);
+      this.marcadorVerificacion.on('dragend', (e: any) => {
+        const pos = e.target.getLatLng();
+        this.puntoVerificacion = {
+          latitud: Number(pos.lat.toFixed(7)),
+          longitud: Number(pos.lng.toFixed(7))
+        };
+        this.resultadoCobertura = null;
+        this.colocarMarcadorVerificacion(this.puntoVerificacion.latitud, this.puntoVerificacion.longitud);
+      });
+    }
+  }
+
+  actualizarCirculoCobertura(): void {
+    if (!this.mapaCobertura || !this.tallerCobertura) return;
+
+    const lat = Number(this.tallerCobertura.latitud || 0) || -17.7833;
+    const lng = Number(this.tallerCobertura.longitud || 0) || -63.1821;
+    const radioMetros = Math.max(Number(this.formCobertura.radio_km) || 0, 0) * 1000;
+    const color = this.formCobertura.activo ? '#ff6b35' : '#8b949e';
+
+    if (this.circuloCobertura) {
+      this.circuloCobertura.setLatLng([lat, lng]);
+      this.circuloCobertura.setRadius(radioMetros);
+      this.circuloCobertura.setStyle({
+        color,
+        fillColor: color,
+        opacity: this.formCobertura.activo ? 1 : 0.35,
+        fillOpacity: this.formCobertura.activo ? 0.18 : 0.06
+      });
+    } else {
+      this.circuloCobertura = L.circle([lat, lng], {
+        radius: radioMetros,
+        color,
+        weight: 2,
+        fillColor: color,
+        fillOpacity: this.formCobertura.activo ? 0.18 : 0.06
+      }).addTo(this.mapaCobertura);
+    }
   }
 
   private async obtenerDireccion(lat: number, lng: number): Promise<void> {
@@ -191,6 +344,16 @@ export class TalleresComponent implements OnInit, OnDestroy {
       this.mapa.remove();
       this.mapa = null;
       this.marcador = null;
+    }
+  }
+
+  private destruirMapaCobertura(): void {
+    if (this.mapaCobertura) {
+      this.mapaCobertura.remove();
+      this.mapaCobertura = null;
+      this.marcadorTallerCobertura = null;
+      this.circuloCobertura = null;
+      this.marcadorVerificacion = null;
     }
   }
 
@@ -257,8 +420,71 @@ export class TalleresComponent implements OnInit, OnDestroy {
         console.error('Error al guardar taller:', err);
       }
     });
-    this.loading = false; 
-    
+  }
+
+  guardarCobertura(): void {
+    if (!this.tallerCobertura) return;
+
+    const radio = Number(this.formCobertura.radio_km);
+    if (!radio || radio <= 0) {
+      this.errorCobertura = 'El radio de cobertura debe ser mayor a 0 km';
+      return;
+    }
+
+    this.guardandoCobertura = true;
+    this.errorCobertura = '';
+
+    this.tallerService.actualizarCobertura(this.tallerCobertura.codigo, {
+      codigo_taller: this.tallerCobertura.codigo,
+      nombre_taller: this.tallerCobertura.nombre,
+      latitud: Number(this.tallerCobertura.latitud),
+      longitud: Number(this.tallerCobertura.longitud),
+      radio_cobertura_km: radio
+    }).subscribe({
+      next: (cobertura) => {
+        this.formCobertura = {
+          radio_km: cobertura.radio_km,
+          activo: cobertura.activo
+        };
+        this.guardandoCobertura = false;
+        this.resultadoCobertura = null;
+        this.actualizarCirculoCobertura();
+      },
+      error: (err) => {
+        console.error('Error al guardar cobertura:', err);
+        this.errorCobertura = err.error?.detail || 'Error al guardar cobertura';
+        this.guardandoCobertura = false;
+      }
+    });
+  }
+
+  verificarCobertura(): void {
+    if (!this.tallerCobertura) return;
+
+    const lat = Number(this.puntoVerificacion.latitud);
+    const lng = Number(this.puntoVerificacion.longitud);
+
+    if (Number.isNaN(lat) || Number.isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+      this.errorCobertura = 'Ingresa coordenadas válidas para verificar la cobertura';
+      return;
+    }
+
+    this.verificandoCobertura = true;
+    this.errorCobertura = '';
+    this.resultadoCobertura = null;
+    this.colocarMarcadorVerificacion(lat, lng);
+
+    this.tallerService.verificarCobertura(this.tallerCobertura.codigo, lat, lng).subscribe({
+      next: (resultado) => {
+        this.resultadoCobertura = resultado;
+        this.verificandoCobertura = false;
+      },
+      error: (err) => {
+        console.error('Error al verificar cobertura:', err);
+        this.errorCobertura = err.error?.detail || 'Error al verificar cobertura';
+        this.verificandoCobertura = false;
+      }
+    });
   }
 
   desactivar(codigo: number): void {

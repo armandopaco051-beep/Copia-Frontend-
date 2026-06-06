@@ -20,4 +20,8 @@ export class DashboardService {
   getTaller(id: number): Observable<DashboardTallerResponse> {
     return this.http.get<DashboardTallerResponse>(`${this.api}/admin-taller/${id}`);
   }
+
+  getMiTaller(): Observable<DashboardTallerResponse> {
+    return this.http.get<DashboardTallerResponse>(`${this.api}/mi-taller`);
+  }
 }

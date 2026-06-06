@@ -42,7 +42,9 @@ export class TecnicosTallerComponent implements OnInit {
 
             },
             error : (err) =>{
-                this.error = err.error?.detail || 'Error al cargar los técnicos';
+                this.error = err.status === 403
+                  ? 'No tienes permiso para acceder a la información de este taller.'
+                  : err.error?.detail || 'Error al cargar los técnicos';
             }
         });
     }
@@ -95,7 +97,9 @@ export class TecnicosTallerComponent implements OnInit {
         this.cargarTecnico();
       },
       error: (err) => {
-        this.error = err.error?.detail || 'Error al guardar técnico';
+        this.error = err.status === 403
+          ? 'No tienes permiso para acceder a la información de este taller.'
+          : err.error?.detail || 'Error al guardar técnico';
         this.loading = false;
       }
     });
@@ -107,7 +111,9 @@ export class TecnicosTallerComponent implements OnInit {
     this.tecnicoService.eliminarMiTecnico(codigo).subscribe({
       next: () => this.cargarTecnico(),
       error: (err) => {
-        this.error = err.error?.detail || 'Error al eliminar técnico';
+        this.error = err.status === 403
+          ? 'No tienes permiso para acceder a la información de este taller.'
+          : err.error?.detail || 'Error al eliminar técnico';
       }
     });
   }
@@ -118,7 +124,9 @@ export class TecnicosTallerComponent implements OnInit {
     }).subscribe({
       next: () => this.cargarTecnico(),
       error: (err) => {
-        this.error = err.error?.detail || 'Error al actualizar disponibilidad';
+        this.error = err.status === 403
+          ? 'No tienes permiso para acceder a la información de este taller.'
+          : err.error?.detail || 'Error al actualizar disponibilidad';
       }
     });
   }

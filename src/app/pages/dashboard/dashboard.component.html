@@ -17,6 +17,77 @@
     </div>
   </section>
 
+  <section class="subscription-overview">
+    <div class="subscription-overview__head">
+      <div>
+        <span class="section-label">Suscripciones multitenant</span>
+        <h2>Estado de talleres y planes</h2>
+      </div>
+      <a routerLink="/suscripciones" class="subscription-link">Gestionar suscripciones</a>
+    </div>
+
+    <div *ngIf="suscripcionesError" class="subscription-error">{{ suscripcionesError }}</div>
+    <div *ngIf="suscripcionesLoading" class="subscription-loading">Cargando suscripciones...</div>
+
+    <ng-container *ngIf="!suscripcionesLoading && !suscripcionesError">
+      <div class="subscription-kpis">
+        <article>
+          <span>Total suscripciones</span>
+          <strong>{{ tenants.length }}</strong>
+        </article>
+        <article class="active">
+          <span>Activas</span>
+          <strong>{{ totalSuscripcionesActivas }}</strong>
+        </article>
+        <article class="suspended">
+          <span>Suspendidas</span>
+          <strong>{{ totalSuscripcionesSuspendidas }}</strong>
+        </article>
+        <article class="expired">
+          <span>Vencidas / canceladas</span>
+          <strong>{{ totalSuscripcionesVencidas }}</strong>
+        </article>
+      </div>
+
+      <div class="subscription-table-wrap">
+        <table class="subscription-table">
+          <thead>
+            <tr>
+              <th>Taller</th>
+              <th>Dominio</th>
+              <th>Estado</th>
+              <th>Vencimiento</th>
+              <th>Dias restantes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let tenant of tenants | slice:0:6">
+              <td>
+                <strong>{{ tenant.nombre }}</strong>
+                <small>Taller #{{ tenant.id_taller }}</small>
+              </td>
+              <td>{{ tenant.dominio }}</td>
+              <td>
+                <span class="subscription-status" [ngClass]="claseSuscripcion(tenant.estado_suscripcion)">
+                  {{ tenant.estado_suscripcion }}
+                </span>
+              </td>
+              <td>{{ tenant.fecha_vencimiento | date:'dd/MM/yyyy' }}</td>
+              <td>
+                <strong [class.subscription-days-danger]="diasSuscripcion(tenant.fecha_vencimiento) <= 7">
+                  {{ diasSuscripcion(tenant.fecha_vencimiento) }}
+                </strong>
+              </td>
+            </tr>
+            <tr *ngIf="tenants.length === 0">
+              <td colspan="5" class="center-cell">No existen suscripciones registradas.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </ng-container>
+  </section>
+
   <!-- KPIs -->
   <section class="kpi-grid">
     <article class="kpi-card kpi-card--danger">

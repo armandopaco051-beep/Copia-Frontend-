@@ -267,6 +267,87 @@
       </div>
     </div>
 
+    <div class="detalle-section">
+      <h3>Historial del chat</h3>
+
+      <div *ngIf="loadingChat" class="evidencia-state">
+        Cargando mensajes del chat...
+      </div>
+
+      <div *ngIf="errorChat && !loadingChat" class="evidencia-state error">
+        {{ errorChat }}
+      </div>
+
+      <div
+        *ngIf="!loadingChat && !errorChat && chatMensajes.length === 0"
+        class="evidencia-state">
+        No hay mensajes registrados para este incidente.
+      </div>
+
+      <div class="chat-readonly" *ngIf="chatMensajes.length > 0">
+        <div
+          class="chat-line"
+          *ngFor="let msg of chatMensajes"
+          [class.tecnico]="msg.emisor_tipo === 'tecnico'">
+          <div class="chat-meta">
+            <strong>{{ msg.emisor_tipo }}</strong>
+            <span>{{ msg.fecha_hora | date:'dd/MM/yyyy HH:mm' }}</span>
+          </div>
+          <p>{{ msg.mensaje }}</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="detalle-section">
+      <h3>Pagos y comprobante</h3>
+
+      <div *ngIf="loadingPagos" class="evidencia-state">
+        Cargando resumen del cobro...
+      </div>
+
+      <div *ngIf="errorPagos && !loadingPagos" class="evidencia-state error">
+        {{ errorPagos }}
+      </div>
+
+      <div *ngIf="resumenCobro && !loadingPagos" class="pago-readonly">
+        <div class="pago-summary">
+          <div>
+            <span>Estado</span>
+            <strong>{{ resumenCobro.estado_pago || 'Sin estado' }}</strong>
+          </div>
+          <div>
+            <span>Subtotal</span>
+            <strong>Bs {{ resumenCobro.subtotal | number:'1.2-2' }}</strong>
+          </div>
+          <div>
+            <span>Descuento</span>
+            <strong>Bs {{ resumenCobro.descuento | number:'1.2-2' }}</strong>
+          </div>
+          <div>
+            <span>Total</span>
+            <strong>Bs {{ resumenCobro.total | number:'1.2-2' }}</strong>
+          </div>
+        </div>
+
+        <div class="pago-lines" *ngIf="resumenCobro.conceptos?.length">
+          <div class="pago-line" *ngFor="let item of resumenCobro.conceptos">
+            <div>
+              <strong>{{ item.descripcion }}</strong>
+              <span>{{ item.cantidad }} x Bs {{ item.precio_unitario | number:'1.2-2' }}</span>
+              <small *ngIf="item.observacion">{{ item.observacion }}</small>
+            </div>
+            <strong>Bs {{ item.subtotal | number:'1.2-2' }}</strong>
+          </div>
+        </div>
+
+        <div class="comprobante-box" *ngIf="comprobantePago">
+          <strong>{{ comprobantePago.numero_comprobante || 'Comprobante generado' }}</strong>
+          <span>{{ comprobantePago.fecha_emision | date:'dd/MM/yyyy HH:mm' }}</span>
+          <span>Total: Bs {{ comprobantePago.total | number:'1.2-2' }}</span>
+        </div>
+      </div>
+    </div>
+
     <div class="modal-actions">
       <button class="btn-secondary" (click)="cerrarDetalle()">
         Cerrar detalle

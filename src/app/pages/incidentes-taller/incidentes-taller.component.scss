@@ -402,6 +402,31 @@
   margin: 10px 0 12px;
 }
 
+.evidencia-video {
+  width: 100%;
+  max-height: 280px;
+  border-radius: 15px;
+  display: block;
+  margin-bottom: 12px;
+  background: #061322;
+}
+
+.evidencia-file {
+  display: block;
+  background: #132b47;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  color: #fff;
+  font-weight: 800;
+  padding: 12px 14px;
+  text-decoration: none;
+  word-break: break-word;
+}
+
+.evidencia-file:hover {
+  filter: brightness(1.08);
+}
+
 .evidencia-card p {
   background: transparent;
   padding: 0;

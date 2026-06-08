@@ -75,7 +75,7 @@
             </div>
             <div>
               <span>Fecha limite</span>
-              <strong>{{ item.fecha_limite | date:'dd/MM/yyyy HH:mm' }}</strong>
+              <strong>{{ getFechaLimite(item) | date:'dd/MM/yyyy HH:mm' }}</strong>
               <small [class.expired-text]="estaVencida(item)">
                 {{ estaVencida(item) ? 'Solicitud vencida' : 'Disponible para responder' }}
               </small>

@@ -56,8 +56,8 @@ export class CotizacionesTallerComponent implements OnInit {
     this.cotizacionService.listarMisSolicitudes().subscribe({
       next: solicitudes => {
         this.solicitudes = (solicitudes || []).sort((a, b) => {
-          const fechaA = new Date(a.fecha_limite || a.fecha_invitacion || '').getTime() || 0;
-          const fechaB = new Date(b.fecha_limite || b.fecha_invitacion || '').getTime() || 0;
+          const fechaA = new Date(this.getFechaLimite(a) || a.fecha_invitacion || '').getTime() || 0;
+          const fechaB = new Date(this.getFechaLimite(b) || b.fecha_invitacion || '').getTime() || 0;
           return fechaB - fechaA;
         });
         this.loading = false;
@@ -66,7 +66,7 @@ export class CotizacionesTallerComponent implements OnInit {
         console.error('ERROR COTIZACIONES:', err);
         this.error = err.status === 403
           ? 'No tienes permiso para consultar las cotizaciones de este taller.'
-          : err.error?.detail || 'No se pudieron cargar las invitaciones de cotizacion.';
+          : this.getMensajeError(err, 'No se pudieron cargar las invitaciones de cotizacion.');
         this.loading = false;
       }
     });
@@ -100,7 +100,7 @@ export class CotizacionesTallerComponent implements OnInit {
       tiempo_llegada_minutos: Number(item.tiempo_llegada_minutos || 0),
       tiempo_reparacion_minutos: Number(item.tiempo_reparacion_minutos || 0),
       descripcion_servicio: item.descripcion_servicio || '',
-      id_tecnico: null,
+      id_tecnico: item.id_tecnico || null,
       observacion: item.observacion || ''
     };
     this.error = '';
@@ -146,7 +146,7 @@ export class CotizacionesTallerComponent implements OnInit {
       tiempo_llegada_minutos: Number(this.respuesta.tiempo_llegada_minutos),
       tiempo_reparacion_minutos: Number(this.respuesta.tiempo_reparacion_minutos),
       descripcion_servicio: this.respuesta.descripcion_servicio.trim(),
-      id_tecnico: null,
+      id_tecnico: this.respuesta.id_tecnico?.trim() || null,
       observacion: this.respuesta.observacion?.trim() || undefined
     }).subscribe({
       next: resp => {
@@ -157,7 +157,7 @@ export class CotizacionesTallerComponent implements OnInit {
       },
       error: err => {
         console.error('ERROR RESPONDER COTIZACION:', err);
-        this.error = err.error?.detail || 'No se pudo enviar la cotizacion.';
+        this.error = this.getMensajeError(err, 'No se pudo enviar la cotizacion.');
         this.accionLoading = false;
       }
     });
@@ -207,7 +207,7 @@ export class CotizacionesTallerComponent implements OnInit {
       },
       error: err => {
         console.error('ERROR RECHAZAR COTIZACION:', err);
-        this.error = err.error?.detail || 'No se pudo rechazar la invitacion.';
+        this.error = this.getMensajeError(err, 'No se pudo rechazar la invitacion.');
         this.accionLoading = false;
       }
     });
@@ -228,20 +228,25 @@ export class CotizacionesTallerComponent implements OnInit {
 
   estaVencida(item: SolicitudCotizacion): boolean {
     if (this.getEstado(item) === 'VENCIDA') return true;
-    if (!item.fecha_limite) return false;
-    return new Date(item.fecha_limite).getTime() < Date.now();
+    const fechaLimite = this.getFechaLimite(item);
+    if (!fechaLimite) return false;
+    return new Date(fechaLimite).getTime() < Date.now();
   }
 
   getIdSolicitud(item: SolicitudCotizacion): number {
-    return Number(item.id_solicitud || item.id || item.codigo || 0);
+    const idSolicitud = item.solicitud?.id || item.id_solicitud || item.cotizacion?.id_solicitud;
+    if (idSolicitud) return Number(idSolicitud);
+
+    const pareceCotizacion = Boolean(item.cotizacion?.id || item.monto_estimado || item.fecha_respuesta);
+    return Number(pareceCotizacion ? 0 : item.id || item.codigo || 0);
   }
 
   getIdIncidente(item: SolicitudCotizacion): number {
-    return Number(item.id_incidente || item.incidente?.codigo || item.incidente?.id || 0);
+    return Number(item.solicitud?.id_incidente || item.id_incidente || item.incidente?.id_incidente || item.incidente?.codigo || item.incidente?.id || 0);
   }
 
   getEstado(item: SolicitudCotizacion): string {
-    return String(item.estado || 'INVITADA').toUpperCase();
+    return String(item.cotizacion?.estado || item.estado || item.solicitud?.estado || 'INVITADA').toUpperCase();
   }
 
   getDescripcion(item: SolicitudCotizacion): string {
@@ -262,6 +267,15 @@ export class CotizacionesTallerComponent implements OnInit {
 
   getLongitud(item: SolicitudCotizacion): number {
     return Number(item.incidente?.longitud || item.longitud || 0);
+  }
+
+  getFechaLimite(item: SolicitudCotizacion): string {
+    return item.solicitud?.fecha_vencimiento ||
+      item.solicitud?.fecha_limite ||
+      item.cotizacion?.fecha_vencimiento ||
+      item.fecha_vencimiento ||
+      item.fecha_limite ||
+      '';
   }
 
   estadoClase(estado: string): string {
@@ -290,5 +304,17 @@ export class CotizacionesTallerComponent implements OnInit {
       id_tecnico: null,
       observacion: ''
     };
+  }
+
+  private getMensajeError(err: any, fallback: string): string {
+    const detail = err?.error?.detail || err?.error?.mensaje || err?.message;
+    if (!detail) return fallback;
+    if (typeof detail === 'string') return detail;
+    if (Array.isArray(detail)) {
+      return detail
+        .map(item => item?.msg || item?.message || JSON.stringify(item))
+        .join(' ');
+    }
+    return detail?.msg || detail?.message || fallback;
   }
 }

@@ -222,17 +222,18 @@
         <div class="evidencia-card" *ngFor="let ev of evidencias">
 
           <!-- Imagen -->
-          <ng-container *ngIf="esImagen(ev)">
-            <span class="evidencia-label">Imagen enviada</span>
+          <ng-container *ngIf="getImagenesEvidencia(ev).length > 0">
+            <span class="evidencia-label">Fotografia enviada</span>
 
             <img
+              *ngFor="let imagen of getImagenesEvidencia(ev)"
               class="evidencia-img"
-              [src]="getUrlArchivo(ev)"
+              [src]="imagen"
               alt="Evidencia del incidente">
 
-            <p *ngIf="ev.transcripcion">
+            <p *ngIf="getTextoEvidencia(ev)">
               <strong>Análisis / descripción:</strong>
-              {{ ev.transcripcion }}
+              {{ getTextoEvidencia(ev) }}
             </p>
           </ng-container>
 
@@ -246,9 +247,25 @@
               [src]="getUrlArchivo(ev)">
             </audio>
 
-            <p *ngIf="ev.transcripcion">
+            <p *ngIf="getTextoEvidencia(ev)">
               <strong>Transcripción:</strong>
-              {{ ev.transcripcion }}
+              {{ getTextoEvidencia(ev) }}
+            </p>
+          </ng-container>
+
+          <!-- Video -->
+          <ng-container *ngIf="esVideo(ev)">
+            <span class="evidencia-label">Video enviado</span>
+
+            <video
+              class="evidencia-video"
+              controls
+              [src]="getUrlArchivo(ev)">
+            </video>
+
+            <p *ngIf="getTextoEvidencia(ev)">
+              <strong>Descripción:</strong>
+              {{ getTextoEvidencia(ev) }}
             </p>
           </ng-container>
 
@@ -258,7 +275,25 @@
 
             <p>
               <strong>Descripción:</strong>
-              {{ ev.transcripcion }}
+              {{ getTextoEvidencia(ev) || 'Sin descripcion.' }}
+            </p>
+          </ng-container>
+
+          <!-- Archivo -->
+          <ng-container *ngIf="esArchivo(ev)">
+            <span class="evidencia-label">Archivo enviado</span>
+
+            <a
+              class="evidencia-file"
+              [href]="getUrlArchivo(ev)"
+              target="_blank"
+              rel="noopener">
+              {{ getNombreArchivo(ev) }}
+            </a>
+
+            <p *ngIf="getTextoEvidencia(ev)">
+              <strong>Descripción:</strong>
+              {{ getTextoEvidencia(ev) }}
             </p>
           </ng-container>
 

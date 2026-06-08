@@ -260,7 +260,7 @@ export class IncidentesTallerComponent implements OnInit {
     this.mostrarDetalle = true;
     this.evidencias =[]; 
     this.errorEvidencia = ''; 
-    const idIncidente = Number(item.id_incidente); 
+    const idIncidente = Number(item.id_incidente || item.incidente?.codigo || item.incidente?.id || item.codigo || 0); 
     if (!idIncidente || isNaN(idIncidente)) {
       alert('El ID del incidente no es válido');
       return;
@@ -489,33 +489,177 @@ export class IncidentesTallerComponent implements OnInit {
     return usuario.email || 'No enviado por backend';
   }
   getUrlArchivo(evidencia: any): string {
-  if (!evidencia?.url_archivo) return '';
+    const archivo = this.getCampoArchivo(evidencia);
+    if (!archivo) return '';
 
-  let ruta = String(evidencia.url_archivo).replaceAll('\\', '/');
-
-  // ✅ Si ya viene con http, la dejamos igual
-  if (ruta.startsWith('http')) {
-    return ruta;
+    return this.construirUrlArchivo(archivo);
   }
 
-  // ✅ Quita slash inicial si viene con /uploads
-  if (ruta.startsWith('/')) {
-    ruta = ruta.substring(1);
+  getImagenesEvidencia(evidencia: any): string[] {
+    const esTipoImagen = Number(evidencia?.id_tipo_evidencia) === 1;
+    const imagenes = this.getCamposArchivo(evidencia)
+      .filter(archivo => esTipoImagen || this.esRutaImagen(archivo) || this.getTipoEvidencia(evidencia).includes('image') || this.getTipoEvidencia(evidencia).includes('imagen'))
+      .map(archivo => this.construirUrlArchivo(archivo))
+      .filter(Boolean);
+
+    return Array.from(new Set(imagenes));
   }
 
-  return `${environment.apiUrl}/${ruta}`;
+  private construirUrlArchivo(archivo: string): string {
+    let ruta = String(archivo || '').replaceAll('\\', '/').trim();
+    if (!ruta) return '';
+
+    if (ruta.startsWith('http') || ruta.startsWith('data:') || ruta.startsWith('blob:')) {
+      return ruta;
+    }
+
+    const uploadsIndex = ruta.toLowerCase().indexOf('uploads/');
+    const staticIndex = ruta.toLowerCase().indexOf('static/');
+    const mediaIndex = ruta.toLowerCase().indexOf('media/');
+
+    if (uploadsIndex >= 0) ruta = ruta.substring(uploadsIndex);
+    else if (staticIndex >= 0) ruta = ruta.substring(staticIndex);
+    else if (mediaIndex >= 0) ruta = ruta.substring(mediaIndex);
+
+    ruta = ruta.replace(/^\/+/, '');
+
+    return `${environment.apiUrl}/${ruta}`;
   }
 
   esImagen(evidencia: any): boolean {
-  return Number(evidencia.id_tipo_evidencia) === 1;
+    const tipo = this.getTipoEvidencia(evidencia);
+    const url = this.getUrlArchivo(evidencia).toLowerCase();
+
+    return this.getImagenesEvidencia(evidencia).length > 0 ||
+      Number(evidencia?.id_tipo_evidencia) === 1 ||
+      tipo.includes('imagen') ||
+      tipo.includes('image') ||
+      this.esRutaImagen(url);
   }
 
   esAudio(evidencia: any): boolean {
-    return Number(evidencia.id_tipo_evidencia) === 2;
+    const tipo = this.getTipoEvidencia(evidencia);
+    const url = this.getUrlArchivo(evidencia).toLowerCase();
+
+    return Number(evidencia?.id_tipo_evidencia) === 2 ||
+      tipo.includes('audio') ||
+      tipo.includes('voz') ||
+      /\.(mp3|wav|ogg|m4a|aac|webm)(\?|#|$)/.test(url);
+  }
+
+  esVideo(evidencia: any): boolean {
+    const tipo = this.getTipoEvidencia(evidencia);
+    const url = this.getUrlArchivo(evidencia).toLowerCase();
+
+    return Number(evidencia?.id_tipo_evidencia) === 4 ||
+      tipo.includes('video') ||
+      /\.(mp4|webm|mov|avi|mkv)(\?|#|$)/.test(url);
   }
 
   esTexto(evidencia: any): boolean {
-    return Number(evidencia.id_tipo_evidencia) === 3;
+    const tipo = this.getTipoEvidencia(evidencia);
+    const tienePreview = this.getImagenesEvidencia(evidencia).length > 0 || this.esAudio(evidencia) || this.esVideo(evidencia);
+    if (tienePreview) return false;
+
+    return !this.getUrlArchivo(evidencia) ||
+      Number(evidencia?.id_tipo_evidencia) === 3 ||
+      tipo.includes('texto') ||
+      tipo.includes('text');
+  }
+
+  esArchivo(evidencia: any): boolean {
+    return Boolean(this.getUrlArchivo(evidencia)) &&
+      !this.esImagen(evidencia) &&
+      !this.esAudio(evidencia) &&
+      !this.esVideo(evidencia);
+  }
+
+  getTextoEvidencia(evidencia: any): string {
+    return evidencia?.transcripcion ||
+      evidencia?.descripcion ||
+      evidencia?.mensaje ||
+      evidencia?.texto ||
+      evidencia?.observacion ||
+      '';
+  }
+
+  getNombreArchivo(evidencia: any): string {
+    const archivo = this.getCampoArchivo(evidencia);
+    if (!archivo) return 'Archivo enviado';
+
+    const partes = String(archivo).replaceAll('\\', '/').split('/');
+    return partes[partes.length - 1] || 'Archivo enviado';
+  }
+
+  private getCampoArchivo(evidencia: any): string {
+    return this.getCamposArchivo(evidencia)[0] || '';
+  }
+
+  private getCamposArchivo(valor: any, profundidad = 0): string[] {
+    if (!valor || profundidad > 3) return [];
+    if (typeof valor === 'string') return [valor];
+    if (typeof valor !== 'object') return [];
+
+    const campos = [
+      'url_archivo',
+      'url',
+      'archivo_url',
+      'urlArchivo',
+      'archivo',
+      'ruta_archivo',
+      'path',
+      'file',
+      'file_url',
+      'media_url',
+      'multimedia_url',
+      'foto',
+      'foto_url',
+      'fotografia',
+      'fotografia_url',
+      'imagen',
+      'imagen_url',
+      'image',
+      'image_url',
+      'ruta_foto',
+      'ruta_imagen'
+    ];
+
+    const urls = campos
+      .map(campo => valor?.[campo])
+      .flatMap(item => this.getCamposArchivo(item, profundidad + 1));
+
+    const colecciones = [
+      valor?.imagenes,
+      valor?.images,
+      valor?.fotos,
+      valor?.fotografias,
+      valor?.archivos,
+      valor?.files,
+      valor?.adjuntos,
+      valor?.multimedia,
+      valor?.evidencias
+    ].filter(Array.isArray);
+
+    const urlsColecciones = colecciones.flatMap(lista =>
+      lista.flatMap((item: any) => this.getCamposArchivo(item, profundidad + 1))
+    );
+
+    return [...urls, ...urlsColecciones].filter(Boolean);
+  }
+
+  private getTipoEvidencia(evidencia: any): string {
+    return String(
+      evidencia?.tipo ||
+      evidencia?.tipo_evidencia ||
+      evidencia?.nombre_tipo ||
+      evidencia?.mime_type ||
+      evidencia?.content_type ||
+      ''
+    ).toLowerCase();
+  }
+
+  private esRutaImagen(ruta: string): boolean {
+    return /\.(jpg|jpeg|png|gif|webp|bmp|svg)(\?|#|$)/i.test(String(ruta || ''));
   }
 
 }
